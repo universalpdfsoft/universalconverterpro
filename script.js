@@ -1,0 +1,224 @@
+/**
+ * Universal Converter Pro - Landing Page Interactivity
+ * Author: Muhammad Zainul Maarif
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  initMobileMenu();
+  initClipboardButtons();
+  initFaqAccordion();
+  initActivationSimulator();
+  initSmoothScroll();
+});
+
+/**
+ * Mobile Navigation Menu Toggle
+ */
+function initMobileMenu() {
+  const menuBtn = document.getElementById('mobileMenuBtn');
+  const navLinks = document.getElementById('navLinks');
+
+  if (!menuBtn || !navLinks) return;
+
+  menuBtn.addEventListener('click', () => {
+    const isOpen = navLinks.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', isOpen);
+  });
+
+  // Close menu when clicking outside or clicking any nav link
+  navLinks.querySelectorAll('.nav-link, .btn').forEach(link => {
+    link.addEventListener('click', () => {
+      navLinks.classList.remove('open');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
+
+/**
+ * 1-Click Clipboard Copy Functionality
+ */
+function initClipboardButtons() {
+  const copyButtons = document.querySelectorAll('[data-copy]');
+  const toast = document.getElementById('toastNotification');
+  const toastMsg = document.getElementById('toastMessage');
+  let toastTimer = null;
+
+  copyButtons.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const textToCopy = btn.getAttribute('data-copy');
+      if (!textToCopy) return;
+
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        showFeedback(btn, 'Tersalin! ✔');
+        showToast(`Berhasil disalin: ${textToCopy}`);
+      } catch (err) {
+        // Fallback for older browsers
+        const tempInput = document.createElement('input');
+        tempInput.value = textToCopy;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+
+        showFeedback(btn, 'Tersalin! ✔');
+        showToast(`Berhasil disalin: ${textToCopy}`);
+      }
+    });
+  });
+
+  function showFeedback(button, tempText) {
+    const originalText = button.innerHTML;
+    button.innerHTML = `<span>${tempText}</span>`;
+    button.style.background = '#22c55e';
+    button.style.color = '#ffffff';
+
+    setTimeout(() => {
+      button.innerHTML = originalText;
+      button.style.background = '';
+      button.style.color = '';
+    }, 1800);
+  }
+
+  function showToast(message) {
+    if (!toast || !toastMsg) return;
+    toastMsg.textContent = message;
+    toast.classList.add('show');
+
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3000);
+  }
+
+  // Also hook into the demo HWID button
+  const btnCopyDemo = document.getElementById('btnCopyDemoHwid');
+  const demoHwidInput = document.getElementById('demoHwid');
+  if (btnCopyDemo && demoHwidInput) {
+    btnCopyDemo.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(demoHwidInput.value);
+        showFeedback(btnCopyDemo, 'Tersalin!');
+        showToast(`Hardware ID disalin: ${demoHwidInput.value}`);
+      } catch (err) {
+        demoHwidInput.select();
+        document.execCommand('copy');
+        showFeedback(btnCopyDemo, 'Tersalin!');
+        showToast(`Hardware ID disalin: ${demoHwidInput.value}`);
+      }
+    });
+  }
+}
+
+/**
+ * FAQ Accordion Expand / Collapse
+ */
+function initFaqAccordion() {
+  const accordionItems = document.querySelectorAll('.accordion-item');
+
+  accordionItems.forEach(item => {
+    const header = item.querySelector('.accordion-header');
+    if (!header) return;
+
+    header.addEventListener('click', () => {
+      const isActive = item.classList.contains('active');
+
+      // Close all other items for clean accordion UX
+      accordionItems.forEach(otherItem => {
+        if (otherItem !== item) {
+          otherItem.classList.remove('active');
+          const otherHeader = otherItem.querySelector('.accordion-header');
+          if (otherHeader) otherHeader.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      // Toggle current item
+      if (isActive) {
+        item.classList.remove('active');
+        header.setAttribute('aria-expanded', 'false');
+      } else {
+        item.classList.add('active');
+        header.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+}
+
+/**
+ * Interactive In-Browser Activation Simulator
+ * Demonstrates the exact UI & feel of the Universal Converter Pro activation window
+ */
+function initActivationSimulator() {
+  const btnInsertKey = document.getElementById('btnInsertDemoKey');
+  const demoSerialInput = document.getElementById('demoSerial');
+  const btnActivate = document.getElementById('btnSimulateActivate');
+  const statusMsg = document.getElementById('simStatusMsg');
+
+  if (!btnActivate || !demoSerialInput || !statusMsg) return;
+
+  // Realistic sample key generated by KeyGenPro
+  const sampleKey = "UCP1-A1AF-9630-2186-DCF1-8B39-E54C-LIFETIME";
+
+  if (btnInsertKey) {
+    btnInsertKey.addEventListener('click', () => {
+      demoSerialInput.value = sampleKey;
+      statusMsg.className = 'sim-feedback-msg';
+      statusMsg.style.display = 'none';
+      demoSerialInput.focus();
+    });
+  }
+
+  btnActivate.addEventListener('click', () => {
+    const entered = demoSerialInput.value.trim();
+
+    if (!entered) {
+      statusMsg.className = 'sim-feedback-msg error';
+      statusMsg.textContent = '❌ Harap masukkan Serial Key lisensi terlebih dahulu.';
+      statusMsg.style.display = 'block';
+      return;
+    }
+
+    if (entered.length < 10) {
+      statusMsg.className = 'sim-feedback-msg error';
+      statusMsg.textContent = '❌ Format Serial Key tidak valid. Pastikan Anda menyalin seluruh kode lisensi dari developer.';
+      statusMsg.style.display = 'block';
+      return;
+    }
+
+    // Success simulation
+    btnActivate.disabled = true;
+    btnActivate.innerHTML = '⏳ Sedang Memverifikasi Kriptografi RSA-2048...';
+
+    setTimeout(() => {
+      btnActivate.disabled = false;
+      btnActivate.innerHTML = '✔ Lisensi Aktif Permanen';
+      btnActivate.style.background = '#16a34a';
+
+      statusMsg.className = 'sim-feedback-msg success';
+      statusMsg.innerHTML = '🎉 <strong>Aktivasi Berhasil!</strong> Software Anda kini aktif permanen (LIFETIME) untuk komputer ini. Bekerja 100% offline selamanya.';
+      statusMsg.style.display = 'block';
+    }, 700);
+  });
+}
+
+/**
+ * Smooth Scrolling for Anchor Links
+ */
+function initSmoothScroll() {
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if (targetId === '#' || targetId === '') return;
+
+      const targetEl = document.querySelector(targetId);
+      if (targetEl) {
+        e.preventDefault();
+        targetEl.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    });
+  });
+}
